@@ -1,78 +1,133 @@
-import React from 'react'
+import axios from "axios";
+import React, { useEffect, useState } from "react";
 
-// önerilen başlangıç stateleri
-const initialMessage = ''
-const initialEmail = ''
-const initialSteps = 0
-const initialIndex = 4 //  "B" nin bulunduğu indexi
+const dizi = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
 export default function AppFunctional(props) {
-  // AŞAĞIDAKİ HELPERLAR SADECE ÖNERİDİR.
-  // Bunları silip kendi mantığınızla sıfırdan geliştirebilirsiniz.
+  const kok = Math.sqrt(dizi.length);
+  const [click, setClick] = useState(4);
+  const [sayac, setSayac] = useState(-1);
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
 
-  function getXY() {
-    // Koordinatları izlemek için bir state e sahip olmak gerekli değildir.
-    // Bunları hesaplayabilmek için "B" nin hangi indexte olduğunu bilmek yeterlidir.
-  }
+  let x = Math.floor(click / kok) + 1;
+  let y = click < kok ? click + 1 : click + 1 - kok * (x - 1);
 
-  function getXYMesaj() {
-    // Kullanıcı için "Koordinatlar (2, 2)" mesajını izlemek için bir state'in olması gerekli değildir.
-    // Koordinatları almak için yukarıdaki "getXY" helperını ve ardından "getXYMesaj"ı kullanabilirsiniz.
-    // tamamen oluşturulmuş stringi döndürür.
-  }
+  useEffect(() => {
+    setSayac(sayac === -1 ? 0 : sayac + 1);
+  }, [click]);
+  //console.log(x, y);
+  console.log(sayac);
 
-  function reset() {
-    // Tüm stateleri başlangıç ​​değerlerine sıfırlamak için bu helperı kullanın.
-  }
+  const handleChange = (event) => {
+    setEmail(event.target.value);
+  };
 
-  function sonrakiIndex(yon) {
-    // Bu helper bir yön ("sol", "yukarı", vb.) alır ve "B" nin bir sonraki indeksinin ne olduğunu hesaplar.
-    // Gridin kenarına ulaşıldığında başka gidecek yer olmadığı için,
-    // şu anki indeksi değiştirmemeli.
-  }
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const data = JSON.stringify({
+      x: x,
+      y: y,
+      steps: sayac,
+      email: email,
+    });
 
-  function ilerle(evt) {
-    // Bu event handler, "B" için yeni bir dizin elde etmek üzere yukarıdaki yardımcıyı kullanabilir,
-    // ve buna göre state i değiştirir.
-  }
+    const config = {
+      method: "post",
+      url: "http://localhost:9000/api/result",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: data,
+    };
 
-  function onChange(evt) {
-    // inputun değerini güncellemek için bunu kullanabilirsiniz
-  }
+    axios(config)
+      .then(function (response) {
+        setMessage(JSON.stringify(response.data.message));
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+    setEmail("");
+    setMessage("");
+  };
 
-  function onSubmit(evt) {
-    // payloadu POST etmek için bir submit handlera da ihtiyacınız var.
-  }
+  console.log(email);
 
   return (
     <div id="wrapper" className={props.className}>
       <div className="info">
-        <h3 id="coordinates">Koordinatlar (2, 2)</h3>
-        <h3 id="steps">0 kere ilerlediniz</h3>
+        <h3 id="coordinates">
+          Koordinatlar ({x},{y})
+        </h3>
+        <h3 id="steps">{sayac} kere ilerlediniz</h3>
       </div>
       <div id="grid">
-        {
-          [0, 1, 2, 3, 4, 5, 6, 7, 8].map(idx => (
-            <div key={idx} className={`square${idx === 4 ? ' active' : ''}`}>
-              {idx === 4 ? 'B' : null}
-            </div>
-          ))
-        }
+        {dizi.map((idx) => (
+          <div key={idx} className={`square${idx === click ? " active" : ""}`}>
+            {idx === click ? "B" : null}
+          </div>
+        ))}
       </div>
       <div className="info">
-        <h3 id="message"></h3>
+        <h3 id="message">{message}</h3>
       </div>
       <div id="keypad">
-        <button id="left">SOL</button>
-        <button id="up">YUKARI</button>
-        <button id="right">SAĞ</button>
-        <button id="down">AŞAĞI</button>
-        <button id="reset">reset</button>
+        <button
+          onClick={() => (
+            setClick(click - 1 < 0 ? click : click - 1), setMessage("")
+          )}
+          id="left"
+        >
+          SOL
+        </button>
+        <button
+          onClick={() => (
+            setClick(click - kok > -1 ? click - kok : click), setMessage("")
+          )}
+          id="up"
+        >
+          YUKARI
+        </button>
+        <button
+          onClick={() => (
+            setClick(click + 1 > dizi.length - 1 ? click : click + 1),
+            setMessage("")
+          )}
+          id="right"
+        >
+          SAĞ
+        </button>
+        <button
+          onClick={() => (
+            setClick(click + kok < dizi.length ? click + kok : click),
+            setMessage("")
+          )}
+          id="down"
+        >
+          AŞAĞI
+        </button>
+        <button
+          onClick={() => {
+            setClick(4);
+            setSayac(sayac !== 0 ? -1 : 0);
+            setMessage("");
+          }}
+          id="reset"
+        >
+          reset
+        </button>
       </div>
-      <form>
-        <input id="email" type="email" placeholder="email girin"></input>
+      <form onSubmit={handleSubmit}>
+        <input
+          onChange={handleChange}
+          value={email}
+          id="email"
+          type="email"
+          placeholder="email girin"
+        ></input>
         <input id="submit" type="submit"></input>
       </form>
     </div>
-  )
+  );
 }
